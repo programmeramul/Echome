@@ -10,18 +10,16 @@ import os
 from pathlib import Path
 
 from fastapi import FastAPI, Request
-from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
 
-from .app.services.ollama_service import (
+from app.services.ollama_service import (
     check_ollama_health,
     generate_with_context,
     generate_response,
     model_available,
     OllamaError,
 )
-from .app.config import settings
+from app.config import settings
 
 # ---------------------------------------------------------------------------
 # Logging
@@ -45,7 +43,8 @@ app = FastAPI(
 
 # ---------------------------------------------------------------------------
 # Health check endpoint
-# -------------------------------------------------------------------------@app.get("/healthz")
+# -------------------------------------------------------------------------
+@app.get("/healthz")
 async def health_check():
     """Return the application health status."""
     ollama_ok = check_ollama_health()
@@ -59,7 +58,8 @@ async def health_check():
 
 # ---------------------------------------------------------------------------
 # Text generation endpoint
-# -------------------------------------------------------------------------@app.post("/api/generate")
+# -------------------------------------------------------------------------
+@app.post("/api/generate")
 async def api_generate(request: Request):
     """Generate a text response from the Ollama model."""
     body = await request.json()
@@ -105,13 +105,14 @@ async def api_generate(request: Request):
 
 def _get_available_models_llm() -> list:
     """List available Ollama models via the service module."""
-    from ..app.services.ollama_service import _get_available_models
+    from app.services.ollama_service import _get_available_models
     return _get_available_models()
 
 
 # ---------------------------------------------------------------------------
 # Serve the Gradio frontend (HTML page)
-# -------------------------------------------------------------------------@app.get("/", response_class=HTMLResponse)
+# -------------------------------------------------------------------------
+@app.get("/", response_class=HTMLResponse)
 async def root(request: Request):
     """Serve the main ECHOME chat interface."""
     return HTMLResponse(content=_render_home(request))
@@ -233,7 +234,8 @@ def _render_home(request: Request) -> str:
 
 # ---------------------------------------------------------------------------
 # Startup event
-# -------------------------------------------------------------------------@app.on_event("startup")
+# -------------------------------------------------------------------------
+@app.on_event("startup")
 async def startup_event():
     """Run on application startup."""
     logger.info("ECHOME starting up...")
@@ -266,7 +268,8 @@ async def startup_event():
 
 # ---------------------------------------------------------------------------
 # Helper: list available models (for API responses)
-# -------------------------------------------------------------------------def _get_available_models_llm() -> list:
+# -------------------------------------------------------------------------
+def _get_available_models_llm() -> list:
     """List available Ollama models."""
     import requests
     try:

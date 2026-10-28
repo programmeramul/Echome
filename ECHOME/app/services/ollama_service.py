@@ -9,15 +9,13 @@ Environment variables (via .env or os.getenv):
   DEFAULT_MODEL: llama3.2:3b (default)
 """
 
-import json
 import logging
 import os
-from concurrent import futures
 from typing import Any, Dict, Optional
 
 import requests
 
-from ..app.config import settings
+from app.config import settings
 
 logger = logging.getLogger(__name__)
 
