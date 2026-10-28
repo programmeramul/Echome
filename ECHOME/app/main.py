@@ -31,14 +31,59 @@ logging.basicConfig(
 logger = logging.getLogger("echome")
 
 # ---------------------------------------------------------------------------
-# FastAPI app
+# FastAPI app with lifespan instead of deprecated on_event
 # ---------------------------------------------------------------------------
+from contextlib import asynccontextmanager
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Startup and shutdown events."""
+    # Startup
+    logger.info("ECHOME starting up...")
+    logger.info(
+        "Configuration: %s",
+        {
+            "ollama_base": settings.ollama_base_url,
+            "default_model": settings.default_model,
+            "bind": settings.bind_address,
+            "memory_db": str(settings.db_path),
+        },
+    )
+
+    # Verify Ollama connection
+    health = check_ollama_health()
+    if not health:
+        logger.warning(
+            "Ollama health check failed. "
+            "Start with: `ollama serve`"
+        )
+    else:
+        logger.info("Ollama is running and healthy.")
+
+    # List available models
+    try:
+        from app.services.ollama_service import _get_available_models_llm
+        models = _get_available_models_llm()
+        logger.info("Available Ollama models: %s", models)
+    except Exception:
+        logger.debug("Could not list models at startup")
+
+    logger.info("ECHOME startup complete. Visit http://127.0.0.1:%s", settings.port)
+
+    yield  # App runs here
+
+    # Shutdown
+    logger.info("ECHOME shutting down...")
+
+
 app = FastAPI(
     title="ECHOME",
     description="Personal AI clone - Your Voice. Your Mind. Your Digital Self.",
     version="0.1.0",
     docs_url="/api/docs",
     redoc_url="/api/redoc",
+    lifespan=lifespan,
 )
 
 # ---------------------------------------------------------------------------
@@ -233,40 +278,6 @@ def _render_home(request: Request) -> str:
     """
 
 # ---------------------------------------------------------------------------
-# Startup event
-# -------------------------------------------------------------------------
-@app.on_event("startup")
-async def startup_event():
-    """Run on application startup."""
-    logger.info("ECHOME starting up...")
-    logger.info("Configuration: %s", {
-        "ollama_base": settings.ollama_base_url,
-        "default_model": settings.default_model,
-        "bind": settings.bind_address,
-        "memory_db": str(settings.db_path),
-    })
-
-    # Verify Ollama connection
-    health = check_ollama_health()
-    if not health:
-        logger.warning(
-            "Ollama health check failed. "
-            "Start with: `ollama serve`"
-        )
-    else:
-        logger.info("Ollama is running and healthy.")
-
-    # List available models
-    try:
-        models = _get_available_models_llm()
-        logger.info("Available Ollama models: %s", models)
-    except Exception:
-        logger.debug("Could not list models at startup")
-
-    logger.info("ECHOME startup complete. Visit http://127.0.0.1:%s", settings.port)
-
-
-# ---------------------------------------------------------------------------
 # Helper: list available models (for API responses)
 # -------------------------------------------------------------------------
 def _get_available_models_llm() -> list:
@@ -281,3 +292,13 @@ def _get_available_models_llm() -> list:
         return [m.get("name", "") for m in resp.json().get("models", [])]
     except Exception:
         return []
+
+
+# ---------------------------------------------------------------------------
+# Entry point
+# -------------------------------------------------------------------------
+if __name__ == "__main__":
+    import uvicorn
+    port = int(os.getenv("ECHOME_PORT", "7860"))
+    host = os.getenv("ECHOME_HOST", "127.0.0.1")
+    uvicorn.run(app, host=host, port=port)
