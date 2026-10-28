@@ -1,7 +1,8 @@
 """Test script for ECHOME application."""
-import json
 import sys
-sys.path.insert(0, "/home/amul/Desktop/Echome/ECHOME")
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).parent))
 
 from app.config import settings
 from app.services.ollama_service import check_ollama_health, model_available, generate_response, _get_available_models

@@ -1,0 +1,25 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Local data: databases, recordings, model weights, secrets
+data/
+recordings/
+*.db
+*.sqlite3
+*.gguf
+*.safetensors
+*.bin
+.env
+.dev.vars
+
+# OS / editor
+.DS_Store
+Thumbs.db
